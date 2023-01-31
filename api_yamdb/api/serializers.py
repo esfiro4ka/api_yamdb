@@ -17,8 +17,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         title_id = self.context['view'].kwargs['title_id']
-        # второй вариант:
-        # title_id = self.context['request'].parser_context['kwargs']['title_id']
         author = self.context['request'].user
         if Review.objects.filter(title_id=title_id, author=author).exists():
             raise ValidationError(
