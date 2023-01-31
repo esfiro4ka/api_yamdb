@@ -1,7 +1,8 @@
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 
-from api.serializers import ReviewSerializer
+from api.serializers import ReviewSerializer, TitleSerializer
 from reviews.models import Title
 
 
@@ -17,3 +18,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         title = self.get_title()
         return title.reviews.all()
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    filter_backends = (DjangoFilterBackend,)
