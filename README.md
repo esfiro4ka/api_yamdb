@@ -47,19 +47,19 @@ python3 manage.py runserver
 - GET-запрос произведения с id=5
 
 ```
-GET /api/v1_router/titles/5/
+GET /api/v1/titles/5/
 ```
 
 - GET-запрос отзыва c id=2 к произведению с id=5
 
 ```
-GET /api/v1_router/titles/5/reviews/2/
+GET /api/v1/titles/5/reviews/2/
 ```
 
 - POST-запрос произведения
 
 ```
-POST /api/v1_router/titles/
+POST /api/v1/titles/
 
 Content-type: application/json
 
