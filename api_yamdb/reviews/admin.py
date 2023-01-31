@@ -4,9 +4,9 @@ from reviews.models import Category, Genre, Review, Title, User
 
 
 class TitleAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'genre', 'category',)
-    search_fields = ('text',)
-    list_filter = ('pub_date',)
+    list_display = ('pk', 'name', 'category',)
+    search_fields = ('name',)
+    list_filter = ('category',)
     empty_value_display = '-пусто-'
 
 
