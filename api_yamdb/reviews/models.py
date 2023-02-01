@@ -2,13 +2,54 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+# from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class User(AbstractUser):
-    bio = models.TextField(
-        'Биография',
-        blank=True,
+
+    ADMIN = 1
+    MODERATOR = 2
+    AUTHUSER = 3
+
+    ROLE_CHOICES = (
+        (ADMIN, 'Admin'),
+        (MODERATOR, 'Moderator'),
+        (AUTHUSER, 'authUser')
     )
+
+    username = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        unique=True
+    )
+    email = models.EmailField(unique=True, max_length=254)
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
+    bio = models.TextField('Биография', blank=True)
+    role = models.PositiveSmallIntegerField(
+        choices=ROLE_CHOICES,
+        blank=True,
+        null=True,
+        default=3
+    )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    class Meta:
+        verbose_name = 'user'
+        verbose_name_plural = 'users'
+
+    # def tokens(self):
+    #     refresh = RefreshToken.for_user(self)
+    #     return({
+    #         'refresh': str(refresh),
+    #         'refresh': str(refresh.access_token),
+    #     })
+
+    def __str__(self):
+        return "{}".format(self.email)
 
 
 class Category(models.Model):
