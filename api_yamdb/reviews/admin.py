@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from reviews.models import Category, Genre, Review, Title, User
+from reviews.models import Category, Genre, Review, Title, User, Comment
 from django.contrib.auth.admin import UserAdmin
 
 
@@ -20,4 +20,5 @@ admin.site.register(Title, TitleAdmin)
 admin.site.register(Category)
 admin.site.register(Genre)
 admin.site.register(Review)
+admin.site.register(Comment)
 admin.site.register(User, CustomUserAdmin)
