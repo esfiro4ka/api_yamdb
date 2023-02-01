@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -58,6 +59,7 @@ class Title(models.Model):
         verbose_name='Описание',
     )
     year = models.IntegerField(
+        validators=[MaxValueValidator(timezone.now().year)],
         verbose_name='Год выпуска',
     )
     category = models.ForeignKey(
