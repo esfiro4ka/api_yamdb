@@ -3,8 +3,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
 
 from api.serializers import (ReviewSerializer, TitleSerializer,
-                             CategorySerializer, SignUpSerializer)
-from reviews.models import Title, Category, User
+                             CategorySerializer, SignUpSerializer,
+                             GenreSerializer)
+from reviews.models import Title, Category, User, Genre
 from api.mixins import CreateListDestroyViewSet
 from api.permissions import IsAdminOrReadOnly
 from rest_framework import generics
@@ -33,6 +34,16 @@ class CategoryViewSet(CreateListDestroyViewSet):
     """Получение списка всех категорий."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = (IsAdminOrReadOnly, )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class GenreViewSet(CreateListDestroyViewSet):
+    """Получение списка всех жанров."""
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)

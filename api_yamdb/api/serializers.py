@@ -42,23 +42,20 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Сериализатор категорий."""
     class Meta:
         fields = '__all__'
         model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """Сериализатор жанров."""
     class Meta:
         fields = '__all__'
         model = Genre
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор произведений."""
     category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(read_only=True, required=False, many=True)
+    genre = GenreSerializer(read_only=True, many=True)
 
     class Meta:
         fields = '__all__'
