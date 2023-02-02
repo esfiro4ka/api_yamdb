@@ -4,18 +4,43 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 # from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+# from django.contrib.auth.base_user import BaseUserManager
+
+# class OurUserManager(BaseUserManager):
+#     def create_user(self, email, password, **extra_fields):
+#         email = self.normalize_email(email)
+
+#         user = self.model(email=email, **extra_fields)
+
+# user.set_password(password)
+
+#     user.save()
+
+#     return user
+
+# def create_superuser(self, email, **extra_fields):
+#     extra_fields.setdefault("is_staff", True)
+#     extra_fields.setdefault("is_superuser", True)
+
+#     if extra_fields.get("is_staff") is not True:
+#         raise ValueError("Superuser has to have is_staff being True")
+
+#     if extra_fields.get("is_superuser") is not True:
+#         raise ValueError("Superuser has to have is_superuser being True")
+
+#     return self.create_user(email=email, **extra_fields)
 
 
 class User(AbstractUser):
 
-    ADMIN = 1
-    MODERATOR = 2
-    AUTHUSER = 3
+    ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    USER = 'user'
 
     ROLE_CHOICES = (
-        (ADMIN, 'Admin'),
-        (MODERATOR, 'Moderator'),
-        (AUTHUSER, 'authUser')
+        (ADMIN, ADMIN),
+        (MODERATOR, MODERATOR),
+        (USER, USER)
     )
 
     username = models.CharField(
@@ -28,29 +53,38 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     bio = models.TextField('Биография', blank=True)
-    role = models.PositiveSmallIntegerField(
+    # role = models.PositiveSmallIntegerField(
+    role = models.CharField(
+        max_length=max([len(role[0]) for role in ROLE_CHOICES]),
         choices=ROLE_CHOICES,
-        blank=True,
-        null=True,
-        default=3
+        default=USER,
     )
+    # objects = OurUserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
     class Meta:
-        verbose_name = 'user'
-        verbose_name_plural = 'users'
-
-    # def tokens(self):
-    #     refresh = RefreshToken.for_user(self)
-    #     return({
-    #         'refresh': str(refresh),
-    #         'refresh': str(refresh.access_token),
-    #     })
+        swappable = "AUTH_USER_MODEL"
+        ordering = ['username']
 
     def __str__(self):
         return "{}".format(self.email)
+
+    @property
+    def is_admin(self):
+        return (
+            self.role == 'admin' 
+            or self.is_superuser
+        )
+
+    @property
+    def is_moderator(self):
+        return (
+            self.role == 'moderator'
+            or self.is_staff
+        )
+
 
 
 class Category(models.Model):
