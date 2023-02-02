@@ -4,8 +4,8 @@ from rest_framework import viewsets, filters
 
 from api.serializers import (ReviewSerializer, TitleSerializer,
                              CategorySerializer, SignUpSerializer,
-                             GenreSerializer)
-from reviews.models import Title, Category, User, Genre
+                             GenreSerializer, CommentSerializer)
+from reviews.models import Title, Category, User, Genre, Review
 from api.mixins import CreateListDestroyViewSet
 from api.permissions import IsAdminOrReadOnly
 from rest_framework import generics
@@ -28,6 +28,20 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         title = self.get_title()
         return title.reviews.all()
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+
+    def get_review(self):
+        return get_object_or_404(Review, id=self.kwargs['review_id'])
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user, review=self.get_review())
+
+    def get_queryset(self):
+        review = self.get_review()
+        return review.comments.all()
 
 
 class CategoryViewSet(CreateListDestroyViewSet):

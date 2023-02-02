@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
-from reviews.models import Review, Title, Category, Genre, User
+from reviews.models import Review, Title, Category, Genre, User, Comment
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -39,6 +39,18 @@ class ReviewSerializer(serializers.ModelSerializer):
                 'Нельзя оставлять больше одного отзыва на произведение!'
             )
         return data
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+
+    class Meta:
+        fields = '__all__'
+        model = Comment
+        read_only_fields = ('review',)
 
 
 class CategorySerializer(serializers.ModelSerializer):

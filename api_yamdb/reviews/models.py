@@ -149,3 +149,18 @@ class Review(models.Model):
 
     def __str__(self) -> str:
         return self.text[:settings.TEXT_LENGTH]
+
+
+class Comment(models.Model):
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comments')
+    review = models.ForeignKey(
+        Review, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField()
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self) -> str:
+        return self.text[:settings.TEXT_LENGTH]
