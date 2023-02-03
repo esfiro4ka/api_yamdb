@@ -23,7 +23,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 
 
-
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
