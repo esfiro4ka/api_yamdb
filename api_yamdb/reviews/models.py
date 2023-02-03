@@ -2,33 +2,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-# from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
-# from django.contrib.auth.base_user import BaseUserManager
-
-# class OurUserManager(BaseUserManager):
-#     def create_user(self, email, password, **extra_fields):
-#         email = self.normalize_email(email)
-
-#         user = self.model(email=email, **extra_fields)
-
-# user.set_password(password)
-
-#     user.save()
-
-#     return user
-
-# def create_superuser(self, email, **extra_fields):
-#     extra_fields.setdefault("is_staff", True)
-#     extra_fields.setdefault("is_superuser", True)
-
-#     if extra_fields.get("is_staff") is not True:
-#         raise ValueError("Superuser has to have is_staff being True")
-
-#     if extra_fields.get("is_superuser") is not True:
-#         raise ValueError("Superuser has to have is_superuser being True")
-
-#     return self.create_user(email=email, **extra_fields)
 
 ADMIN = 'admin'
 MODERATOR = 'moderator'
@@ -57,7 +31,6 @@ class User(AbstractUser):
         choices=ROLE_CHOICES,
         default=USER,
     )
-    # objects = OurUserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -195,3 +168,4 @@ class Comment(models.Model):
 
     def __str__(self) -> str:
         return self.text[:settings.TEXT_LENGTH]
+
