@@ -1,26 +1,25 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
-# from django.shortcuts import render
 from api.serializers import (ReviewSerializer, TitleSerializer,
                              CategorySerializer, SignUpSerializer,
                              GenreSerializer, CommentSerializer,
-                             UserSerializer)
+                             UserSerializer, TokenSerializer)
 from reviews.models import Title, Category, Genre, Review, User
 from api.mixins import CreateListDestroyViewSet
-from api.permissions import IsAdminOrReadOnly, IsAdminModeratorAuthorOrReadOnly
+from api.permissions import (IsAdminOrReadOnly,
+                             IsAdminModeratorAuthorOrReadOnly)
 from rest_framework import generics
-# from reviews.utils import Util
 from rest_framework import status
-# from rest_framework_simplejwt.tokens import RefreshToken
-# from django.contrib.sites.shortcuts import get_current_site
-# from django.urls import reverse
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .tokens import create_jwt_pair_for_user
 from django.contrib.auth import authenticate
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -85,94 +84,65 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
+class SignUpView(generics.GenericAPIView):
+    """Регистрация пользователя по email"""
+
+    serializer_class = SignUpSerializer
+    permission_classes = (AllowAny,)
+
+
+    def post(self, request):
+        if User.objects.filter(
+            username=request.data.get('username'),
+            email=request.data.get('email')
+        ).exists():
+            return Response(request.data, status=status.HTTP_200_OK)
+
+        serializer = SignUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        user = get_object_or_404(
+            User,
+            username=serializer.validated_data["username"]
+        )
+        confirmation_code=default_token_generator.make_token(user)
+
+
+        email_subject="Activate your Account"
+        email_body=f'Your confirmation code: {confirmation_code}',
+
+        send_mail(
+            email_subject,
+            email_body,
+            settings.EMAIL_HOST_USER,
+            [user_data['email'],]
+        )
+            
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def get_token(request):
+    serializer = TokenSerializer(data=request.data)
+    permission_classes = (AllowAny,)
+    serializer.is_valid(raise_exception=True)
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data["username"]
+    )
+
+    if default_token_generator.check_token(
+        user, serializer.validated_data["confirmation_code"]
+    ):
+        token = AccessToken.for_user(user)
+        return Response({"token": str(token)}, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class UsersViewSet(viewsets.ModelViewSet):
     """Получение списка всех произведений."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     # filter_backends = (DjangoFilterBackend,)
-
-
-# class SignUp(generics.GenericAPIView):
-#     serializer_class = SignUpSerializer
-
-#     def post(self, request):
-#         data = request.data
-#         serializer = self.serializer_class(data=data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         user = serializer.data
-
-#         user_email = User.objects.get(email=user['email'])
-#         tokens = RefreshToken.for_user(user_email).access_token
-
-#         current_site = get_current_site(request).domain
-#         relative_link = reverse('token_obtain_pair')
-#         absurl = (
-#             'http://' + current_site + relative_link
-#             + '?token=' + str(tokens)
-#         )
-#         email_body = 'Hi ' + user['username'] + \
-#             ' Use the link below to verify your email \n' + absurl
-#         data = {'email_body': email_body, 'to_email': user['email'],
-#                 'email_subject': 'Verify your email'}
-
-#         Util.send_email(data=data)
-
-#         return response.Response(
-#             {'user_data': user, 'access_token': str(tokens)},
-#             status=status.HTTP_201_CREATED
-#         )
-
-class SignUpView(generics.GenericAPIView):
-    serializer_class = SignUpSerializer
-    permission_classes = []
-
-    def post(self, request: Request):
-        data = request.data
-
-        serializer = self.serializer_class(data=data)
-
-        if serializer.is_valid():
-            serializer.save()
-
-            response = {
-                "message": "User Created Successfully",
-                "data": serializer.data
-            }
-
-            return Response(data=response, status=status.HTTP_201_CREATED)
-
-        return Response(
-            data=serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-
-class GetTokenFromEmailView(APIView):
-    permission_classes = []
-
-    def post(self, request: Request):
-        email = request.data.get("email")
-        confirmation_code = request.data.get("confirmation_code")
-
-        user = authenticate(email=email, confirmation_code=confirmation_code)
-
-        if user is not None:
-
-            tokens = create_jwt_pair_for_user(user)
-
-            response = {"message": "Login Successfull", "tokens": tokens}
-            return Response(data=response, status=status.HTTP_200_OK)
-
-        else:
-            return Response(data={"message": "Invalid email or password"})
-
-    def get(self, request: Request):
-        content = {"user": str(request.user), "auth": str(request.auth)}
-
-        return Response(data=content, status=status.HTTP_200_OK)
-
-
-# def profile(request):
-#     users = User.objects.all()
-#     return render(request, 'templates/profile.html', {'users': users})
+    permission_classes = (IsAdminOrReadOnly,)
