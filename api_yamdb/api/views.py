@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
 from api.serializers import (ReviewSerializer, TitleSerializer,
@@ -6,6 +7,7 @@ from api.serializers import (ReviewSerializer, TitleSerializer,
                              GenreSerializer, CommentSerializer,
                              UserSerializer, TokenSerializer)
 from reviews.models import Title, Category, Genre, Review, User
+from api.filters import TitlesFilter
 from api.mixins import CreateListDestroyViewSet
 from api.permissions import (IsAdminOrReadOnly,
                              IsAdminModeratorAuthorOrReadOnly)
@@ -19,7 +21,6 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -78,9 +79,12 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Получение списка всех произведений."""
-    queryset = Title.objects.all()
+    queryset = Title.objects.all()#.annotate(
+        #avg_rating=Avg('review__rating')
+        #).order_by('-avg_rating')
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitlesFilter
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
