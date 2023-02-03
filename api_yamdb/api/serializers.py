@@ -1,47 +1,69 @@
 from rest_framework import serializers
-from rest_framework.authtoken.models import Token
+# from rest_framework.authtoken.models import Token
 from rest_framework.serializers import ValidationError
+from rest_framework.validators import UniqueValidator
 
 from reviews.models import Review, Title, Category, Genre, User, Comment
 
 
-class SignUpSerializer(serializers.ModelSerializer):
-    # tokens = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = ['id', 'first_name', 'last_name',
-                  'username', 'email', 'role', 'tokens']
-        read_only_fields = ('id',)
-
-    def validate(self, attrs):
-
-        email_exists = User.objects.filter(email=attrs["email"]).exists()
-
-        if email_exists:
-            raise ValidationError("Email has already been used")
-
-        return super().validate(attrs)
-
-    def create(self, validated_data):
-        password = validated_data.pop("password")
-
-        user = super().create(validated_data)
-
-        user.set_password(password)
-
-        user.save()
-
-        Token.objects.create(user=user)
-
-        return user
-
-
 class UserSerializer(serializers.ModelSerializer):
+
+    username = serializers.CharField(
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+        required=True,
+    )
+    email = serializers.EmailField(
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+        required=True,
+    )
+
     class Meta:
         model = User
-        fields = "__all__"
+        fields = '__all__'
 
+
+class SignUpSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+    email = serializers.EmailField(
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+
+    def validate_username(self, value):
+        if value.lower() == "me":
+            raise serializers.ValidationError("Username 'me' is not valid")
+        return value
+
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+
+
+    # def validate(self, attrs):
+
+    #     email_exists = User.objects.filter(email=attrs["email"]).exists()
+
+    #     if email_exists:
+    #         raise ValidationError("Email has already been used")
+
+    #     return super().validate(attrs)
+
+    # def create(self, validated_data):
+    #     user = User.objects.create_user(
+    #         validated_data['email'],
+    #         validated_data['username']
+    #     )
+    #     return user
+
+
+class TokenSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
