@@ -30,19 +30,18 @@ from django.utils import timezone
 
 #     return self.create_user(email=email, **extra_fields)
 
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+USER = 'user'
+
+ROLE_CHOICES = (
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+    (USER, USER)
+)
+
 
 class User(AbstractUser):
-
-    ADMIN = 'admin'
-    MODERATOR = 'moderator'
-    USER = 'user'
-
-    ROLE_CHOICES = (
-        (ADMIN, ADMIN),
-        (MODERATOR, MODERATOR),
-        (USER, USER)
-    )
-
     username = models.CharField(
         max_length=150,
         blank=True,
@@ -53,7 +52,6 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     bio = models.TextField('Биография', blank=True)
-    # role = models.PositiveSmallIntegerField(
     role = models.CharField(
         max_length=max([len(role[0]) for role in ROLE_CHOICES]),
         choices=ROLE_CHOICES,
@@ -73,18 +71,15 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return (
-            self.role == 'admin' 
-            or self.is_superuser
-        )
+        return self.role == ADMIN
+
+    @property
+    def is_user(self):
+        return self.role == USER
 
     @property
     def is_moderator(self):
-        return (
-            self.role == 'moderator'
-            or self.is_staff
-        )
-
+        return self.role == MODERATOR
 
 
 class Category(models.Model):
@@ -176,6 +171,7 @@ class Review(models.Model):
     text = models.TextField()
     score = models.IntegerField(validators=[MinValueValidator(1),
                                             MaxValueValidator(10)])
+    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Отзыв'
@@ -191,6 +187,7 @@ class Comment(models.Model):
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()
+    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Комментарий'

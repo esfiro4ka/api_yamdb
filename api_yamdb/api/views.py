@@ -1,21 +1,21 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
-from django.shortcuts import render
+# from django.shortcuts import render
 from api.serializers import (ReviewSerializer, TitleSerializer,
                              CategorySerializer, SignUpSerializer,
                              GenreSerializer, CommentSerializer,
                              UserSerializer)
 from reviews.models import Title, Category, Genre, Review, User
 from api.mixins import CreateListDestroyViewSet
-from api.permissions import IsAdminOrReadOnly
+from api.permissions import IsAdminOrReadOnly, IsAdminModeratorAuthorOrReadOnly
 from rest_framework import generics
 # from reviews.utils import Util
 from rest_framework import status
 # from rest_framework_simplejwt.tokens import RefreshToken
 # from django.contrib.sites.shortcuts import get_current_site
 # from django.urls import reverse
-
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -25,6 +25,8 @@ from django.contrib.auth import authenticate
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly,)
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -39,6 +41,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly,)
 
     def get_review(self):
         return get_object_or_404(Review, id=self.kwargs['review_id'])
@@ -55,7 +59,8 @@ class CategoryViewSet(CreateListDestroyViewSet):
     """Получение списка всех категорий."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly, )
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -65,7 +70,8 @@ class GenreViewSet(CreateListDestroyViewSet):
     """Получение списка всех жанров."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly, )
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -76,6 +82,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
 class UsersViewSet(viewsets.ModelViewSet):
