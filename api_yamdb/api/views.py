@@ -21,7 +21,6 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from collections import defaultdict
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -33,8 +32,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def perform_create(self, serializer):
-        title = self.get_title()
-        serializer.save(author=self.request.user, title=title)
+        serializer.save(author=self.request.user, title=self.get_title())
 
     def get_queryset(self):
         title = self.get_title()
