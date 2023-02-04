@@ -2,10 +2,11 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
-from api.serializers import (ReviewSerializer, TitleSerializer,
+from api.serializers import (POSTReviewSerializer, TitleSerializer,
                              CategorySerializer, SignUpSerializer,
                              GenreSerializer, CommentSerializer,
-                             UserSerializer, TokenSerializer)
+                             UserSerializer, TokenSerializer,
+                             PATCHReviewSerializer)
 from reviews.models import Title, Category, Genre, Review, User
 from api.filters import TitlesFilter
 from api.mixins import CreateListDestroyViewSet
@@ -24,9 +25,13 @@ from django.core.mail import send_mail
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    serializer_class = ReviewSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.action == 'partial_update':
+            return PATCHReviewSerializer
+        return POSTReviewSerializer
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
