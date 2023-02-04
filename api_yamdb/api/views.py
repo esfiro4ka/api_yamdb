@@ -2,11 +2,13 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
-from api.serializers import (ReviewSerializer, TitleSerializer,
+from api.serializers import (POSTReviewSerializer, TitleSerializer,
                              CategorySerializer, SignUpSerializer,
                              GenreSerializer, CommentSerializer,
                              UserSerializer, CustomTokenObtainPairSerializer,
-                             UserEditSerializer, CreateUserSerializer)
+                             UserEditSerializer, CreateUserSerializer, 
+                             PATCHReviewSerializer)
+
 from reviews.models import Title, Category, Genre, Review, User
 from api.filters import TitlesFilter
 from api.mixins import CreateListDestroyViewSet
@@ -32,9 +34,13 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    serializer_class = ReviewSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.action == 'partial_update':
+            return PATCHReviewSerializer
+        return POSTReviewSerializer
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -87,9 +93,8 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Получение списка всех произведений."""
-    queryset = Title.objects.all()#.annotate(
-        #avg_rating=Avg('review__rating')
-        #).order_by('-avg_rating')
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('-rating')
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitlesFilter
@@ -227,3 +232,4 @@ class UsersViewSet(viewsets.ModelViewSet):
                 "user": UserSerializer(User, context=serializer.data)
             })
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+

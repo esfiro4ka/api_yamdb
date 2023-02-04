@@ -20,7 +20,7 @@ class IsAdminModeratorAuthorOrReadOnly(permissions.BasePermission):
             return True
         elif request.method == 'POST' and request.user.is_user:
             return True
-        return request.method in ['PATCH',
-                                  'DELETE'] and (request.user.is_admin
-                                                 or request.user.is_moderator
-                                                 or request.user == obj.author)
+        return request.method in ['PATCH', 'DELETE'] and (
+            request.user.is_admin
+            or request.user.is_moderator
+            or (request.user.is_user and request.user == obj.author))

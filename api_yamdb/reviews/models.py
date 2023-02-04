@@ -138,13 +138,14 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews')
     text = models.TextField()
-    score = models.IntegerField(validators=[MinValueValidator(1),
-                                            MaxValueValidator(10)])
+    score = models.IntegerField(default=0, validators=[MinValueValidator(1),
+                                                       MaxValueValidator(10)])
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        unique_together = ('author', 'title')
 
     def __str__(self) -> str:
         return self.text[:settings.TEXT_LENGTH]
@@ -164,4 +165,3 @@ class Comment(models.Model):
 
     def __str__(self) -> str:
         return self.text[:settings.TEXT_LENGTH]
-
