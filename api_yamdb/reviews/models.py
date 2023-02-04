@@ -16,12 +16,7 @@ ROLE_CHOICES = (
 
 
 class User(AbstractUser):
-    username = models.CharField(
-        max_length=150,
-        blank=True,
-        null=True,
-        unique=True
-    )
+    username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True, max_length=254)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
@@ -33,6 +28,7 @@ class User(AbstractUser):
     )
 
     USERNAME_FIELD = 'email'
+    EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
     class Meta:

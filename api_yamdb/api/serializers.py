@@ -1,13 +1,33 @@
 from rest_framework import serializers
-# from rest_framework.authtoken.models import Token
 from rest_framework.serializers import ValidationError
 from rest_framework.validators import UniqueValidator
-
+from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from reviews.models import Review, Title, Category, Genre, User, Comment
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+class EmailTokenObtainSerializer(TokenObtainSerializer):
+    username = serializers.CharField()
+    email = serializers.EmailField()
+
+
+class CustomTokenObtainPairSerializer(TokenObtainSerializer):
+    @classmethod
+    def get_token(cls, user):
+        return RefreshToken.for_user(user)
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        refresh = self.get_token(self.user)
+
+        data["refresh"] = str(refresh)
+        data["access"] = str(refresh.access_token)
+
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     username = serializers.CharField(
         validators=[
             UniqueValidator(queryset=User.objects.all())
@@ -26,44 +46,80 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SignUpSerializer(serializers.ModelSerializer):
+class CreateUserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+        required=True,
     )
     email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+        required=True,
     )
-
-    def validate_username(self, value):
-        if value.lower() == "me":
-            raise serializers.ValidationError("Username 'me' is not valid")
-        return value
 
     class Meta:
         model = User
         fields = ['username', 'email']
 
-
-    # def validate(self, attrs):
-
-    #     email_exists = User.objects.filter(email=attrs["email"]).exists()
-
-    #     if email_exists:
-    #         raise ValidationError("Email has already been used")
-
-    #     return super().validate(attrs)
-
-    # def create(self, validated_data):
-    #     user = User.objects.create_user(
-    #         validated_data['email'],
-    #         validated_data['username']
-    #     )
-    #     return user
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            validated_data['email'],
+            validated_data['username'],
+        )
+        return user
 
 
-class TokenSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    confirmation_code = serializers.CharField()
+class UserEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ("username", "email", "first_name",
+                  "last_name", "bio", "role")
+        model = User
+        read_only_fields = ('role',)
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+        required=True,
+    )
+    email = serializers.EmailField(
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
+        required=True,
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+
+    def validate_username(self, value):
+        if value.lower() == "me":
+            raise serializers.ValidationError("Username 'me' is not valid")
+        elif len(value) > 150:
+            raise serializers.ValidationError("Invalid field length")
+        elif value != r'^[\w.@-]+$':
+            raise serializers.ValidationError("Invalid field simbol")
+        return value
+
+    def validate_email(self, value):
+        lower_email = value.lower()
+        if User.objects.filter(email__iexact=lower_email).exists():
+            raise serializers.ValidationError("Duplicate")
+        return lower_email
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            validated_data['username'],
+            validated_data['email']
+        )
+        return user
+
 
 
 class POSTReviewSerializer(serializers.ModelSerializer):
