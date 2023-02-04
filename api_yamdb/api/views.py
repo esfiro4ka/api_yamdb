@@ -21,6 +21,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from collections import defaultdict
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -32,7 +33,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, title=self.get_title())
+        title = self.get_title()
+        serializer.save(author=self.request.user, title=title)
 
     def get_queryset(self):
         title = self.get_title()
@@ -79,9 +81,8 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Получение списка всех произведений."""
-    queryset = Title.objects.all()#.annotate(
-        #avg_rating=Avg('review__rating')
-        #).order_by('-avg_rating')
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('-rating')
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitlesFilter
@@ -93,7 +94,6 @@ class SignUpView(generics.GenericAPIView):
 
     serializer_class = SignUpSerializer
     permission_classes = (AllowAny,)
-
 
     def post(self, request):
         if User.objects.filter(

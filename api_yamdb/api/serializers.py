@@ -65,6 +65,7 @@ class TokenSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
+
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True,
@@ -113,7 +114,9 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
+    rating = serializers.IntegerField()
 
     class Meta:
         fields = '__all__'
         model = Title
+        read_only_fields = ('rating',)
