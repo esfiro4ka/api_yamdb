@@ -79,9 +79,8 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Получение списка всех произведений."""
-    queryset = Title.objects.all()#.annotate(
-        #avg_rating=Avg('review__rating')
-        #).order_by('-avg_rating')
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('-rating')
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitlesFilter
@@ -93,7 +92,6 @@ class SignUpView(generics.GenericAPIView):
 
     serializer_class = SignUpSerializer
     permission_classes = (AllowAny,)
-
 
     def post(self, request):
         if User.objects.filter(
