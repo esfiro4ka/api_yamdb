@@ -66,7 +66,7 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
 
-class ReviewSerializer(serializers.ModelSerializer):
+class POSTReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'
@@ -83,6 +83,24 @@ class ReviewSerializer(serializers.ModelSerializer):
         if Review.objects.filter(title_id=title_id, author=author).exists():
             raise ValidationError(
                 'Нельзя оставлять больше одного отзыва на произведение!'
+            )
+        return data
+
+
+class PATCHReviewSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('text', 'score')
+        model = Review
+        read_only_fields = ('title',)
+
+    def validate(self, data):
+        title_id = self.context['view'].kwargs['title_id']
+        author = self.context['request'].user
+        if not Review.objects.filter(title_id=title_id,
+                                     author=author).exists():
+            raise ValidationError(
+                'Вы не можете редактировать чужой отзыв!'
             )
         return data
 
@@ -114,7 +132,7 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
-    rating = serializers.IntegerField()
+    # rating = serializers.IntegerField()
 
     class Meta:
         fields = '__all__'
