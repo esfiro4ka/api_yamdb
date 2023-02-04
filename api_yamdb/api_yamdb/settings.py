@@ -1,11 +1,13 @@
 from pathlib import Path
 from datetime import timedelta
+from django.core.management.utils import get_random_secret_key
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
-
+# SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
+SECRET_KEY = get_random_secret_key()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -107,6 +109,8 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
