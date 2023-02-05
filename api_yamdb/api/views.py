@@ -2,11 +2,12 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
-from api.serializers import (POSTReviewSerializer, TitleSerializer,
+from api.serializers import (POSTReviewSerializer, GETTitleSerializer,
+                             POSTTitleSerializer,
                              CategorySerializer, SignUpSerializer,
                              GenreSerializer, CommentSerializer,
                              UserSerializer, CustomTokenObtainPairSerializer,
-                             UserEditSerializer, CreateUserSerializer, 
+                             UserEditSerializer, CreateUserSerializer,
                              PATCHReviewSerializer)
 
 from reviews.models import Title, Category, Genre, Review, User
@@ -93,12 +94,17 @@ class GenreViewSet(CreateListDestroyViewSet):
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Получение списка всех произведений."""
-    queryset = Title.objects.annotate(
+    queryset = Title.objects.all().annotate(
         rating=Avg('reviews__score')).order_by('-rating')
-    serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitlesFilter
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAdminOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return GETTitleSerializer
+        return POSTTitleSerializer
 
 
 class SignUpView(generics.GenericAPIView):
