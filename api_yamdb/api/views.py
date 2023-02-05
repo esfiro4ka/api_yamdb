@@ -1,36 +1,35 @@
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, mixins
 from api.serializers import (POSTReviewSerializer, GETTitleSerializer,
                              POSTTitleSerializer,
                              CategorySerializer, SignUpSerializer,
                              GenreSerializer, CommentSerializer,
                              UserSerializer, CustomTokenObtainPairSerializer,
-                             UserEditSerializer, CreateUserSerializer,
-                             PATCHReviewSerializer)
+                             UserEditSerializer, PATCHReviewSerializer)
 
 from reviews.models import Title, Category, Genre, Review, User
 from api.filters import TitlesFilter
 from api.mixins import CreateListDestroyViewSet
-from api.permissions import (IsAdminOrReadOnly,
+from api.permissions import (IsAdminOrReadOnly, IsAdmin,
                              IsAdminModeratorAuthorOrReadOnly)
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
                                         AllowAny,
                                         IsAuthenticated)
-from rest_framework.request import Request
+# from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.contrib.auth import authenticate
+# from rest_framework.views import APIView
+# from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.decorators import action, api_view, permission_classes
+# from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.decorators import action
 from django.core.mail import send_mail
 from rest_framework.filters import SearchFilter
-import jwt
-from django.conf import settings
+# import jwt
+# from django.conf import settings
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 
@@ -172,25 +171,35 @@ class SignUpView(generics.GenericAPIView):
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+    # filter_backends = (DjangoFilterBackend,)
+# class UsersViewSet(viewsets.ModelViewSet):
 
-class UsersViewSet(viewsets.ModelViewSet):
+
+class UsersViewSet(mixins.CreateModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.DestroyModelMixin,
+                   mixins.UpdateModelMixin,
+                   viewsets.GenericViewSet):
+
     """Получение списка всех произведений."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'username'
-    # filter_backends = (DjangoFilterBackend,)
     filter_backends = (SearchFilter,)
-    search_fields = ('user__username')
-    permission_classes = (IsAdminOrReadOnly,)
+    search_fields = ('username')
+    lookup_field = 'username'
+    permission_classes = (IsAdminOrReadOnly, 
+                          IsAdminModeratorAuthorOrReadOnly,
+                          IsAuthenticated, IsAdmin)
 
     @action(
         methods=['get', 'patch'],
         detail=False,
         url_path='me',
-        permission_classes=(IsAuthenticated,),
+        permission_classes=(IsAuthenticated, IsAdminModeratorAuthorOrReadOnly),
         serializer_class=UserEditSerializer,
     )
-    def users_own_profile(self, request):
+    def user_self_profile(self, request):
         user = request.user
 
         if request.method == "GET":
@@ -207,35 +216,69 @@ class UsersViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(
-        methods=['post'],
-        detail=True,
-        permission_classes=(IsAuthenticated,),
-        serializer_class=CreateUserSerializer,
-    )
-    def create_user(self, request):
-        if request.method == "POST":
-            serializer = CreateUserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response({
-                "user": UserSerializer(User, context=serializer.data)
-            })
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(
-        methods=['get'],
-        detail=False,
-        permission_classes=(IsAdminOrReadOnly,),
-        serializer_class=UserSerializer,
-    )
-    def list_users(self, request):
-        if request.method == "GET":
-            serializer = UserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response({
-                "user": UserSerializer(User, context=serializer.data)
-            })
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    # @action(
+    #     methods=['get', 'patch'],
+    #     detail=False,
+    #     url_path='me',
+    #     permission_classes=(IsAuthenticated, IsAdminModeratorAuthorOrReadOnly),
+    #     serializer_class=UserEditSerializer,
+    # )
+    # def users_own_profile(self, request):
+    #     user = request.user
 
+    #     if request.method == "GET":
+    #         serializer = self.get_serializer(user)
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     if request.method == "PATCH":
+    #         serializer = self.get_serializer(
+    #             user,
+    #             data=request.data,
+    #             partial=True
+    #         )
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    # @action(
+    #     methods=['post'],
+    #     detail=True,
+    #     permission_classes=(IsAdmin,),
+    #     serializer_class=CreateUserSerializer,
+    # )
+    # def create_user(self, request):
+    #     if request.method == "POST":
+    #         serializer = CreateUserSerializer(data=request.data)
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save()
+    #         return Response({
+    #             "user": UserSerializer(User, context=serializer.data)
+    #         })
+    #     return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    # @action(
+    #     methods=['get'],
+    #     detail=False,
+    #     permission_classes=(IsAdmin,),
+    #     serializer_class=UserSerializer,
+    # )
+    # def list_users(self, request):
+    #     if request.method == "GET":
+    #         serializer = UserSerializer(data=request.data)
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save()
+    #         return Response({
+    #             "user": UserSerializer(User, context=serializer.data)
+    #         })
+    #     return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    # @action(
+    #     methods=['delete'],
+    #     detail=False,
+    #     permission_classes=(IsAdmin,),
+    #     serializer_class=UserSerializer,
+    # )
+    # def delete(self, request):
+        # serializer = UserSerializer(data=request.data)
+        # return Response(status=status.HTTP_204_NO_CONTENT)

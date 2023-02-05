@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-from rest_framework.validators import UniqueValidator
+# from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from reviews.models import Review, Title, Category, Genre, User, Comment
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 class EmailTokenObtainSerializer(TokenObtainSerializer):
     username = serializers.CharField()
     email = serializers.EmailField()
+    # comformation_code = serializers.CharField()
 
 
 class CustomTokenObtainPairSerializer(TokenObtainSerializer):
@@ -28,48 +29,12 @@ class CustomTokenObtainPairSerializer(TokenObtainSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        validators=[
-            UniqueValidator(queryset=User.objects.all())
-        ],
-        required=True,
-    )
-    email = serializers.EmailField(
-        validators=[
-            UniqueValidator(queryset=User.objects.all())
-        ],
-        required=True,
-    )
 
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ("username", "email", "first_name",
+                  "last_name", "bio", "role")
 
-
-class CreateUserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        validators=[
-            UniqueValidator(queryset=User.objects.all())
-        ],
-        required=True,
-    )
-    email = serializers.EmailField(
-        validators=[
-            UniqueValidator(queryset=User.objects.all())
-        ],
-        required=True,
-    )
-
-    class Meta:
-        model = User
-        fields = ['username', 'email']
-
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            validated_data['email'],
-            validated_data['username'],
-        )
-        return user
 
 
 class UserEditSerializer(serializers.ModelSerializer):
@@ -81,22 +46,13 @@ class UserEditSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        validators=[
-            UniqueValidator(queryset=User.objects.all())
-        ],
-        required=True,
-    )
-    email = serializers.EmailField(
-        validators=[
-            UniqueValidator(queryset=User.objects.all())
-        ],
-        required=True,
-    )
 
     class Meta:
         model = User
-        fields = ['username', 'email']
+        fields = ['username', 'email', 'role']
+        read_only_fields = ('role',)
+        # fields = ("username", "email", "first_name",
+        #           "last_name", "bio", "role")
 
     def validate_username(self, value):
         if value.lower() == "me":
@@ -108,10 +64,13 @@ class SignUpSerializer(serializers.ModelSerializer):
         return value
 
     def validate_email(self, value):
-        lower_email = value.lower()
-        if User.objects.filter(email__iexact=lower_email).exists():
-            raise serializers.ValidationError("Duplicate")
-        return lower_email
+        # lower_email = value.lower()
+        # if User.objects.filter(email__iexact=lower_email).exists():
+        #     raise serializers.ValidationError("Duplicate")
+        if len(value) > 254:
+            raise serializers.ValidationError("Invalid field length")
+        return value
+        # return lower_email
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -174,13 +133,13 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        fields = '__all__'
+        fields = ('name', 'slug')
         model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = '__all__'
+        fields = ('name', 'slug')
         model = Genre
 
 

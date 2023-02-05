@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import (MinValueValidator,
+                                    MaxValueValidator,
+                                    RegexValidator)
 from django.db import models
 from django.utils import timezone
 
@@ -16,10 +18,25 @@ ROLE_CHOICES = (
 
 
 class User(AbstractUser):
-    username = models.CharField(max_length=150, unique=True)
-    email = models.EmailField(unique=True, max_length=254)
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[
+            RegexValidator(r'^[\w.@-]+$')
+        ]
+    )
+    email = models.EmailField(
+        unique=True,
+        max_length=254
+    )
+    first_name = models.CharField(
+        max_length=150,
+        blank=True
+    )
+    last_name = models.CharField(
+        max_length=150,
+        blank=True
+    )
     bio = models.TextField('Биография', blank=True)
     role = models.CharField(
         max_length=max([len(role[0]) for role in ROLE_CHOICES]),
@@ -28,8 +45,9 @@ class User(AbstractUser):
     )
 
     USERNAME_FIELD = 'email'
-    EMAIL_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    # EMAIL_FIELD = 'email'
+    # REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = []
 
     class Meta:
         swappable = "AUTH_USER_MODEL"
@@ -138,6 +156,7 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews')
     text = models.TextField()
+    # default=0,
     score = models.IntegerField(default=0, validators=[MinValueValidator(1),
                                                        MaxValueValidator(10)])
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
