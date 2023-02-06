@@ -43,10 +43,9 @@ class User(AbstractUser):
         choices=ROLE_CHOICES,
         default=USER,
     )
+    confirmation_code = models.CharField(max_length=150)
 
     USERNAME_FIELD = 'email'
-    # EMAIL_FIELD = 'email'
-    # REQUIRED_FIELDS = ['username']
     REQUIRED_FIELDS = []
 
     class Meta:
