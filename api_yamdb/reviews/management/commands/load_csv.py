@@ -1,9 +1,8 @@
 import csv
-from django.core.management import BaseCommand
-from reviews.models import (Category, Comment, Genre,
-                            GenreTitle, Review, Title,
-                            User)
 
+from django.core.management import BaseCommand
+from reviews.models import (Category, Comment, Genre, GenreTitle, Review,
+                            Title, User)
 
 ALREDY_LOADED_ERROR_MESSAGE = """
 If you need to reload the data from the CSV file,

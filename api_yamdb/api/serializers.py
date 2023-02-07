@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-from reviews.models import Review, Title, Category, Genre, User, Comment
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -24,8 +24,7 @@ class CustomTokenObtainSerializer(serializers.ModelSerializer):
         model = User
 
     def create(self, data):
-        user = User.objects.create_user(data['username'])
-        return user
+        return User.objects.create_user(data['username'])
 
 
 class UserSerializer(serializers.ModelSerializer):

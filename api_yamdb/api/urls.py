@@ -1,11 +1,9 @@
-from rest_framework_simplejwt.views import TokenRefreshView
+from api.views import (CategoryViewSet, CommentViewSet, CustomTokenObtainView,
+                       GenreViewSet, ReviewViewSet, SignUpView, TitleViewSet,
+                       UsersViewSet)
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from api.views import (ReviewViewSet, TitleViewSet,
-                       CategoryViewSet, GenreViewSet,
-                       SignUpView, CommentViewSet,
-                       UsersViewSet, CustomTokenObtainView)
-
+from rest_framework_simplejwt.views import TokenRefreshView
 
 v1_router = DefaultRouter()
 v1_router.register(r'titles', TitleViewSet, basename='titles')

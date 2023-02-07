@@ -1,31 +1,27 @@
-from django.shortcuts import get_object_or_404
-from django.db.models import Avg
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, filters, mixins
-from api.serializers import (POSTReviewSerializer, GETTitleSerializer,
-                             POSTTitleSerializer,
-                             CategorySerializer, SignUpSerializer,
-                             GenreSerializer, CommentSerializer,
-                             UserSerializer, CustomTokenObtainSerializer,
-                             UserEditSerializer, PATCHReviewSerializer)
-
-from reviews.models import Title, Category, Genre, Review, User
 from api.filters import TitlesFilter
 from api.mixins import CreateListDestroyViewSet
-from api.permissions import (IsAdminOrReadOnly, IsAdmin,
-                             IsAdminModeratorAuthorOrReadOnly)
-from rest_framework import generics
-from rest_framework import status
-from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
-                                        AllowAny,
-                                        IsAuthenticated)
-from rest_framework.response import Response
+from api.permissions import (IsAdmin, IsAdminModeratorAuthorOrReadOnly,
+                             IsAdminOrReadOnly)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             CustomTokenObtainSerializer, GenreSerializer,
+                             GETTitleSerializer, PATCHReviewSerializer,
+                             POSTReviewSerializer, POSTTitleSerializer,
+                             SignUpSerializer, UserEditSerializer,
+                             UserSerializer)
 from django.contrib.auth.tokens import default_token_generator
-from rest_framework.decorators import action
 from django.core.mail import send_mail
+from django.db.models import Avg
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics, mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from reviews.models import Category, Genre, Review, Title, User
 
 
 class SignUpView(generics.GenericAPIView):
