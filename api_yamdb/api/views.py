@@ -4,10 +4,9 @@ from api.permissions import (IsAdmin, IsAdminModeratorAuthorOrReadOnly,
                              IsAdminOrReadOnly)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              CustomTokenObtainSerializer, GenreSerializer,
-                             GETTitleSerializer, PATCHReviewSerializer,
-                             POSTReviewSerializer, POSTTitleSerializer,
-                             SignUpSerializer, UserEditSerializer,
-                             UserSerializer)
+                             ReviewSerializer, SignUpSerializer,
+                             TitleReadSerializer, TitleWriteSerializer,
+                             UserEditSerializer, UserSerializer)
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -21,7 +20,8 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from reviews.models import Category, Genre, Review, Title, User
+from reviews.models import Category, Genre, Review, Title
+from users.models import User
 
 
 class SignUpView(generics.GenericAPIView):
@@ -36,21 +36,20 @@ class SignUpView(generics.GenericAPIView):
         ).exists():
             return Response(request.data, status=status.HTTP_200_OK)
         serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(is_active=False)
-            user = User.objects.get(username=serializer.data['username'])
-            confirmation_code = default_token_generator.make_token(user)
-            user.save()
-            email_subject = "Activate your Account"
-            email_body = f'Your confirmation code: {confirmation_code}'
-            send_mail(
-                email_subject,
-                email_body,
-                from_email=None,
-                recipient_list=[user.email],
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(is_active=False)
+        user = User.objects.get(username=serializer.data['username'])
+        confirmation_code = default_token_generator.make_token(user)
+        user.save()
+        email_subject = "Activate your Account"
+        email_body = f'Your confirmation code: {confirmation_code}'
+        send_mail(
+            email_subject,
+            email_body,
+            from_email=None,
+            recipient_list=[user.email],
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CustomTokenObtainView(TokenObtainPairView):
@@ -60,29 +59,24 @@ class CustomTokenObtainView(TokenObtainPairView):
     def post(self, request):
         confirmation_code = request.data.get('confirmation_code')
         serializer = CustomTokenObtainSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = get_object_or_404(
-                User, username=serializer.data['username']
-            )
-            if user.confirmation_code != confirmation_code:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-            user.is_active = True
-            user.save()
-            token = RefreshToken.for_user(user)
-            return Response(
-                {"token": str(token.access_token)}, status=status.HTTP_200_OK
-            )
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(
+            User, username=serializer.data['username']
+        )
+        if user.confirmation_code != confirmation_code:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        user.is_active = True
+        user.save()
+        token = RefreshToken.for_user(user)
+        return Response(
+            {"token": str(token.access_token)}, status=status.HTTP_200_OK
+        )
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly,)
-
-    def get_serializer_class(self):
-        if self.action == 'partial_update':
-            return PATCHReviewSerializer
-        return POSTReviewSerializer
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -144,8 +138,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
-            return GETTitleSerializer
-        return POSTTitleSerializer
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class UsersViewSet(mixins.CreateModelMixin,
@@ -177,13 +171,12 @@ class UsersViewSet(mixins.CreateModelMixin,
         if request.method == "GET":
             serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.method == "PATCH":
-            serializer = self.get_serializer(
-                user,
-                data=request.data,
-                partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        serializer = self.get_serializer(
+            user,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

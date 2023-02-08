@@ -1,11 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from reviews.models import Category, Comment, Genre, Review, Title, User
-
-
-class CustomUserAdmin(UserAdmin):
-    model = User
-    list_display = ('email', 'username',)
+from reviews.models import Category, Comment, Genre, Review, Title
 
 
 class TitleAdmin(admin.ModelAdmin):
@@ -20,4 +14,3 @@ admin.site.register(Category)
 admin.site.register(Genre)
 admin.site.register(Review)
 admin.site.register(Comment)
-admin.site.register(User, CustomUserAdmin)
