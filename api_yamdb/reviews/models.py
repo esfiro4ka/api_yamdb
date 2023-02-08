@@ -1,70 +1,8 @@
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
-from django.core.validators import (MaxValueValidator, MinValueValidator,
-                                    RegexValidator)
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-
-ADMIN = 'admin'
-MODERATOR = 'moderator'
-USER = 'user'
-
-ROLE_CHOICES = (
-    (ADMIN, ADMIN),
-    (MODERATOR, MODERATOR),
-    (USER, USER)
-)
-
-
-class User(AbstractUser):
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-        validators=[
-            RegexValidator(r'^[\w.@-]+$')
-        ]
-    )
-    email = models.EmailField(
-        unique=True,
-        max_length=254
-    )
-    first_name = models.CharField(
-        max_length=150,
-        blank=True
-    )
-    last_name = models.CharField(
-        max_length=150,
-        blank=True
-    )
-    bio = models.TextField('Биография', blank=True)
-    role = models.CharField(
-        max_length=max([len(role[0]) for role in ROLE_CHOICES]),
-        choices=ROLE_CHOICES,
-        default=USER,
-    )
-    confirmation_code = models.CharField(max_length=150)
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
-
-    class Meta:
-        swappable = "AUTH_USER_MODEL"
-        ordering = ['username']
-
-    def __str__(self):
-        return "{}".format(self.email)
-
-    @property
-    def is_admin(self):
-        return self.role == ADMIN
-
-    @property
-    def is_user(self):
-        return self.role == USER
-
-    @property
-    def is_moderator(self):
-        return self.role == MODERATOR
+from users.models import User
 
 
 class Category(models.Model):
@@ -106,7 +44,8 @@ class Genre(models.Model):
 class Title(models.Model):
     name = models.CharField(
         verbose_name='Название',
-        max_length=200
+        max_length=200,
+        db_index=True,
     )
     description = models.TextField(
         blank=True,
@@ -116,6 +55,7 @@ class Title(models.Model):
     year = models.IntegerField(
         validators=[MaxValueValidator(timezone.now().year)],
         verbose_name='Год выпуска',
+        db_index=True,
     )
     category = models.ForeignKey(
         Category,
@@ -154,9 +94,12 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews')
     text = models.TextField()
-    # default=0,
-    score = models.IntegerField(default=0, validators=[MinValueValidator(1),
-                                                       MaxValueValidator(10)])
+    score = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(1),
+                    MaxValueValidator(10)],
+        db_index=True,
+    )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
