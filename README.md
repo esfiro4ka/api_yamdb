@@ -71,3 +71,7 @@ Content-type: application/json
     "category": "Книга"
 }
 ```
+
+## Стек технологий
+
+Python 3, Django 2.2.16, Django REST Framework, SQLite3, JWT.
